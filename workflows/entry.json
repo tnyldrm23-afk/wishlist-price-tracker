@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "3ab2bfa0-4503-4e8d-bb2b-d6c5d60ee67f",
-      "name": "Telegram message",
+      "name": "Receive Telegram message",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -30,7 +30,7 @@
     },
     {
       "id": "12cc51b0-1b05-4812-b9be-531f0bfef949",
-      "name": "Handle message",
+      "name": "Process Telegram command",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
@@ -51,7 +51,7 @@
     },
     {
       "id": "7e05b324-63d5-4fe5-b653-cabb2155f0f2",
-      "name": "Every morning at 09:00",
+      "name": "Start daily check at 09:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -71,7 +71,7 @@
     },
     {
       "id": "fb193798-37ce-4854-b5c3-0c095183395e",
-      "name": "Schedule settings",
+      "name": "Prepare daily check",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -84,7 +84,7 @@
     },
     {
       "id": "2a4418bc-b2ef-41f8-8128-da74644f093a",
-      "name": "Check wishlist",
+      "name": "Check all saved products",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
@@ -105,7 +105,7 @@
     },
     {
       "id": "ec0bf3ed-d129-4bfc-b8a3-674d33872717",
-      "name": "Read me 5",
+      "name": "Workflow notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
@@ -120,33 +120,33 @@
     }
   ],
   "connections": {
-    "Telegram message": {
+    "Receive Telegram message": {
       "main": [
         [
           {
-            "node": "Handle message",
+            "node": "Process Telegram command",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Every morning at 09:00": {
+    "Start daily check at 09:00": {
       "main": [
         [
           {
-            "node": "Schedule settings",
+            "node": "Prepare daily check",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Schedule settings": {
+    "Prepare daily check": {
       "main": [
         [
           {
-            "node": "Check wishlist",
+            "node": "Check all saved products",
             "type": "main",
             "index": 0
           }

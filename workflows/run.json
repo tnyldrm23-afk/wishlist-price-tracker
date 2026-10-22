@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "f6817455-0b5c-4422-a0a5-2bd4c14137c7",
-      "name": "Input",
+      "name": "Receive input",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
@@ -18,7 +18,7 @@
     },
     {
       "id": "13d8a25e-502d-487c-8bb5-08e0a079bcd1",
-      "name": "Read active watches",
+      "name": "Load active tracked products",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
@@ -41,7 +41,7 @@
     },
     {
       "id": "3505b063-3dea-48d3-b9c8-704759615eeb",
-      "name": "Wishlist",
+      "name": "Read wishlist result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -54,7 +54,7 @@
     },
     {
       "id": "f991af4a-fe9b-492e-abba-b148db0f37d8",
-      "name": "Any watches?",
+      "name": "Are any products tracked?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -88,7 +88,7 @@
     },
     {
       "id": "f78408a8-9620-4004-a158-91609aacd1a0",
-      "name": "Each watch",
+      "name": "Prepare each product",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -101,7 +101,7 @@
     },
     {
       "id": "9788de1e-487b-4ba0-9dc2-de1f91fc3be9",
-      "name": "Check Watch Price",
+      "name": "Check one product price",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
@@ -122,7 +122,7 @@
     },
     {
       "id": "e6233482-973d-4020-8275-6e199518e8f4",
-      "name": "Check summary",
+      "name": "Summarise check results",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -130,12 +130,12 @@
         -100
       ],
       "parameters": {
-        "jsCode": "const results=$input.all().map(x=>x.json);return [{json:{...$('Input').first().json,reply:'Checked '+results.length+' product(s). '+results.filter(x=>x.status==='price-unavailable').length+' unavailable. New qualifying alerts are sent separately.',results}}];"
+        "jsCode": "const results=$input.all().map(x=>x.json);return [{json:{...$('Receive input').first().json,reply:'Checked '+results.length+' product(s). '+results.filter(x=>x.status==='price-unavailable').length+' unavailable. New qualifying alerts are sent separately.',results}}];"
       }
     },
     {
       "id": "5750634f-f68e-4d79-97b6-5f36f6a3c2c0",
-      "name": "Empty wishlist",
+      "name": "Reply that wishlist is empty",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -143,78 +143,78 @@
         160
       ],
       "parameters": {
-        "jsCode": "return [{json:{...$('Input').first().json,reply:'Your wishlist is empty. Add a product with /watch <link> <target EUR> [discount %].',results:[]}}];"
+        "jsCode": "return [{json:{...$('Receive input').first().json,reply:'Your wishlist is empty. Add a product with /watch <link> <target EUR> [discount %].',results:[]}}];"
       }
     }
   ],
   "connections": {
-    "Input": {
+    "Receive input": {
       "main": [
         [
           {
-            "node": "Read active watches",
+            "node": "Load active tracked products",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Read active watches": {
+    "Load active tracked products": {
       "main": [
         [
           {
-            "node": "Wishlist",
+            "node": "Read wishlist result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Wishlist": {
+    "Read wishlist result": {
       "main": [
         [
           {
-            "node": "Any watches?",
+            "node": "Are any products tracked?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Any watches?": {
+    "Are any products tracked?": {
       "main": [
         [
           {
-            "node": "Each watch",
+            "node": "Prepare each product",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Empty wishlist",
+            "node": "Reply that wishlist is empty",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Each watch": {
+    "Prepare each product": {
       "main": [
         [
           {
-            "node": "Check Watch Price",
+            "node": "Check one product price",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Watch Price": {
+    "Check one product price": {
       "main": [
         [
           {
-            "node": "Check summary",
+            "node": "Summarise check results",
             "type": "main",
             "index": 0
           }

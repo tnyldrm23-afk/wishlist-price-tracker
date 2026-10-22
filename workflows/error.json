@@ -12,7 +12,7 @@
   "nodes": [
     {
       "id": "5e1f1936-7e68-49c3-ae9a-93b8adec9fac",
-      "name": "Error Trigger",
+      "name": "Catch workflow failure",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
       "parameters": {},
@@ -23,7 +23,7 @@
     },
     {
       "id": "352cb760-a458-4cfa-9774-b92fbceb3b17",
-      "name": "Prepare failure notification",
+      "name": "Format safe error message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "parameters": {
@@ -36,7 +36,7 @@
     },
     {
       "id": "9a2553c1-632e-4113-8c7c-b49b9af85e01",
-      "name": "Notify owner",
+      "name": "Send error to Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "parameters": {
@@ -62,7 +62,7 @@
     },
     {
       "id": "9a176b5c-1c5d-43a1-95d5-4c8c632907b6",
-      "name": "About error handling",
+      "name": "Error handling notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "parameters": {
@@ -77,22 +77,22 @@
     }
   ],
   "connections": {
-    "Error Trigger": {
+    "Catch workflow failure": {
       "main": [
         [
           {
-            "node": "Prepare failure notification",
+            "node": "Format safe error message",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare failure notification": {
+    "Format safe error message": {
       "main": [
         [
           {
-            "node": "Notify owner",
+            "node": "Send error to Telegram",
             "type": "main",
             "index": 0
           }

@@ -15,3 +15,5 @@ The workflow obtains a valid observation, calculates eligibility, reserves an al
 ![One-product price checking workflow](images/n8n-check.jpg)
 
 The shared Error Trigger handler was added after these canvas screenshots. Its current definition is included in `workflows/error.json`.
+
+Canvas screenshots were captured before the node-label readability update. Current JSON exports use clearer labels while preserving the workflow structure and behaviour.

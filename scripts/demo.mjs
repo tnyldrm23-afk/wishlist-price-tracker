@@ -14,8 +14,8 @@ async function scenario(extra={}){return api('/scenario',{asin:'B000TEST01',pric
 async function command(text,options={}){
  const id=options.id??nextId++,wf=JSON.parse(readFileSync('workflows/demo.json','utf8'));
  const update={update_id:id,message:{chat:{id:options.chat??10001,type:'private'},text}};
- wf.nodes.find(n=>n.name==='Demo update').parameters.jsCode=options.schedule?JSON.parse(readFileSync('workflows/entry.json','utf8')).nodes.find(n=>n.name==='Schedule settings').parameters.jsCode:'return [{json:'+JSON.stringify({update})+'}];';
- if(options.schedule)wf.nodes.find(n=>n.name==='Handle demo message').parameters.workflowId.value='wtRunChecks00001';
+ wf.nodes.find(n=>n.name==='Create test message').parameters.jsCode=options.schedule?JSON.parse(readFileSync('workflows/entry.json','utf8')).nodes.find(n=>n.name==='Prepare daily check').parameters.jsCode:'return [{json:'+JSON.stringify({update})+'}];';
+ if(options.schedule)wf.nodes.find(n=>n.name==='Process test command').parameters.workflowId.value='wtRunChecks00001';
  writeFileSync('.runtime/demo-run.json',JSON.stringify(wf));
  docker(['exec','-T','n8n','n8n','import:workflow','--input=/bootstrap/demo-run.json']);
  let out;
@@ -25,7 +25,7 @@ async function command(text,options={}){
  const begin=out.indexOf('\n{'),end=out.lastIndexOf('\n}');
  const result=JSON.parse(out.slice(begin+1,end+2));
  assert.equal(result.status,'success');
- return {id,result:result.data.resultData.runData['Handle demo message'].at(-1).data.main[0][0]?.json};
+ return {id,result:result.data.resultData.runData['Process test command'].at(-1).data.main[0][0]?.json};
 }
 async function check(name,fn){await fn();report.push({name,status:'passed'});console.log('PASS '+name);writeFileSync('docs/demo-results.json',JSON.stringify({tested_at:new Date().toISOString(),mode:'demo',n8n:'2.43.4',tests:report},null,2)+'\n');}
 const alertCount=()=>Number(sql("SELECT count(*) FROM tracker.alerts WHERE status='sent';"));

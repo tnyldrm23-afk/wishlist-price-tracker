@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "8cfa0ef4-d12b-49cd-8582-5145f625caeb",
-      "name": "Input",
+      "name": "Receive input",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
@@ -18,7 +18,7 @@
     },
     {
       "id": "04ac1665-cc28-41eb-907f-e23838f52582",
-      "name": "Demo mode?",
+      "name": "Is this demo mode?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -52,7 +52,7 @@
     },
     {
       "id": "9e890257-d276-4846-919a-424a5a3ce27c",
-      "name": "Capture demo message",
+      "name": "Save demo reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -81,7 +81,7 @@
     },
     {
       "id": "28036f7f-8cb2-4c39-a03c-111fc59e6e9f",
-      "name": "Send Telegram",
+      "name": "Send Telegram message",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
@@ -108,7 +108,7 @@
     },
     {
       "id": "ed0abdbf-8208-4a70-b8e7-31a85faa2351",
-      "name": "Delivery result",
+      "name": "Return delivery status",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -116,12 +116,12 @@
         0
       ],
       "parameters": {
-        "jsCode": "const ctx=$('Input').first().json;const message=$json.result??$json;return [{json:{...ctx,delivered:!$json.error&&($json.ok===true||message.message_id!=null),message_id:message.message_id==null?null:String(message.message_id)}}];"
+        "jsCode": "const ctx=$('Receive input').first().json;const message=$json.result??$json;return [{json:{...ctx,delivered:!$json.error&&($json.ok===true||message.message_id!=null),message_id:message.message_id==null?null:String(message.message_id)}}];"
       }
     },
     {
       "id": "18dccd2a-32c5-44a4-b70a-ca982328b31b",
-      "name": "Read me 5",
+      "name": "Workflow notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
@@ -136,51 +136,51 @@
     }
   ],
   "connections": {
-    "Input": {
+    "Receive input": {
       "main": [
         [
           {
-            "node": "Demo mode?",
+            "node": "Is this demo mode?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Demo mode?": {
+    "Is this demo mode?": {
       "main": [
         [
           {
-            "node": "Capture demo message",
+            "node": "Save demo reply",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send Telegram",
+            "node": "Send Telegram message",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Capture demo message": {
+    "Save demo reply": {
       "main": [
         [
           {
-            "node": "Delivery result",
+            "node": "Return delivery status",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Telegram": {
+    "Send Telegram message": {
       "main": [
         [
           {
-            "node": "Delivery result",
+            "node": "Return delivery status",
             "type": "main",
             "index": 0
           }

@@ -96,7 +96,7 @@ See [live setup](docs/SETUP.md), [reliability and error handling](docs/RELIABILI
 npm test
 ```
 
-The 43 unit tests cover parsing, authorisation, exact thresholds, repeated-price suppression, observation validation, offer normalisation and error-message safety. They do not use Amazon or Telegram credentials.
+The 46 unit tests cover parsing, authorisation, exact thresholds, repeated-price suppression, observation validation, offer normalisation and error-message safety. They do not use Amazon or Telegram credentials.
 
 `npm run demo` exercises end-to-end scenarios on the isolated demo deployment. A fresh-clone Docker integration run is separate from the unit tests; see the setup instructions before running it.
 
@@ -118,3 +118,5 @@ Database locks and alert reservations reduce duplicates; exactly-once delivery a
 - `docs/`: English setup, reliability notes and reviewed screenshots.
 
 Credentials belong in ignored `.env` files or n8n’s credential store. Do not publish runtime logs, credential exports or screenshots of credential values.
+
+Node labels describe their actions directly, such as `Read command and arguments`, `Choose command action`, `Check target and discount` and `Save price and reserve alert`. Code expressions and connection references use the same labels.

@@ -14,7 +14,7 @@ assert.equal(sql(`SELECT count(*) FROM tracker.watches WHERE ${filter} AND activ
 const original=readFileSync('workflows/demo.json','utf8');
 async function command(text,label){
  const w=JSON.parse(original);
- w.nodes.find(n=>n.name==='Demo update').parameters.jsCode='return [{json:'+JSON.stringify({update:{update_id:Date.now(),message:{chat:{id:Number(env.ALLOWED_CHAT_ID),type:'private'},text}}})+'}];';
+ w.nodes.find(n=>n.name==='Create test message').parameters.jsCode='return [{json:'+JSON.stringify({update:{update_id:Date.now(),message:{chat:{id:Number(env.ALLOWED_CHAT_ID),type:'private'},text}}})+'}];';
  writeFileSync('.runtime/live-smoke.json',JSON.stringify(w));
  docker(['compose','exec','-T','n8n','n8n','import:workflow','--input=/bootstrap/live-smoke.json']);
  const output=docker(['compose','exec','-T','-e','N8N_RUNNERS_BROKER_PORT=5680','n8n','n8n','execute','--id=wtDemo0000000001']);

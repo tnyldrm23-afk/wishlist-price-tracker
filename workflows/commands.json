@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "134aade4-8229-412d-97ec-26e7203c26bd",
-      "name": "Input",
+      "name": "Receive input",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
@@ -18,7 +18,7 @@
     },
     {
       "id": "04fa7d76-857e-4a6f-a2bb-638c5385a09b",
-      "name": "Settings",
+      "name": "Add app settings",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -34,7 +34,7 @@
     },
     {
       "id": "0785c3e6-c3c7-421f-9b90-bcf3b8729324",
-      "name": "Parse command",
+      "name": "Read command and arguments",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -47,7 +47,7 @@
     },
     {
       "id": "ea520d13-91c3-4120-a2bf-cdbb692c1e8a",
-      "name": "Allowed user?",
+      "name": "Is this the authorised user?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -81,7 +81,7 @@
     },
     {
       "id": "bc05fc4e-42e1-4996-8c31-f11b23715dfa",
-      "name": "Ignore unauthorized",
+      "name": "Skip unauthorised message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -94,7 +94,7 @@
     },
     {
       "id": "cb30afe3-c0d8-4207-bc7a-f61e18619eca",
-      "name": "Claim update",
+      "name": "Record incoming message ID",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
@@ -117,7 +117,7 @@
     },
     {
       "id": "b414755f-9855-4858-a6f4-0022c75ce82a",
-      "name": "Claimed",
+      "name": "Read message check result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -130,7 +130,7 @@
     },
     {
       "id": "17df9c19-7e7d-4498-adad-e81ba587458e",
-      "name": "New update?",
+      "name": "Is this a new message?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -164,7 +164,7 @@
     },
     {
       "id": "7038d0a8-29a6-4c5d-b7e5-631fd0c7372a",
-      "name": "Duplicate ignored",
+      "name": "Skip repeated message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -177,7 +177,7 @@
     },
     {
       "id": "0d2b888c-92c9-463b-969e-18e882b4baff",
-      "name": "Route command",
+      "name": "Choose command action",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
@@ -192,7 +192,7 @@
     },
     {
       "id": "0815a3be-39b5-4c28-9058-407485bacc1b",
-      "name": "Fetch registration price",
+      "name": "Get starting product price",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
@@ -213,7 +213,7 @@
     },
     {
       "id": "403dfadd-bf35-48d6-8b87-9bb60bb1c983",
-      "name": "Can register?",
+      "name": "Is starting price valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -247,7 +247,7 @@
     },
     {
       "id": "a6a0ac1b-1cc0-4df9-b585-a5a4f1654f81",
-      "name": "Registration price error",
+      "name": "Explain price lookup failure",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -260,7 +260,7 @@
     },
     {
       "id": "a2c0560f-4dc3-48b6-a7ff-d01821ea70c3",
-      "name": "Register product",
+      "name": "Save product and targets",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
@@ -283,7 +283,7 @@
     },
     {
       "id": "1deef760-8e0b-4575-bb1e-7ab611465616",
-      "name": "Registered",
+      "name": "Read registration result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -296,7 +296,7 @@
     },
     {
       "id": "f07a25a5-ee8f-407d-84ac-741393a01587",
-      "name": "New registration?",
+      "name": "Was a new product saved?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -330,7 +330,7 @@
     },
     {
       "id": "261f268d-c7fc-4e39-a734-988447d598a8",
-      "name": "Summarise product",
+      "name": "Create short product label",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
@@ -348,7 +348,7 @@
     },
     {
       "id": "79f83c72-8700-46ac-b8f1-cdeaa8959258",
-      "name": "Summary model",
+      "name": "Local product label model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
@@ -377,7 +377,7 @@
     },
     {
       "id": "1b8de842-a6b0-4541-8088-0af9d2687a75",
-      "name": "Registration confirmation",
+      "name": "Check label and confirm save",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -385,12 +385,12 @@
         -620
       ],
       "parameters": {
-        "jsCode": "const ctx=$('Registered').first().json;const raw=typeof $json.text==='string'?$json.text.trim().slice(0,350):'';const allowed=new Set((ctx.product.title+' new condition a an the is in product').toLowerCase().match(/[a-z0-9]+/g)||[]);const words=raw.toLowerCase().match(/[a-z0-9]+/g)||[];const safe=words.length>0&&words.every(w=>allowed.has(w))&&!/[\u20ac$\u00a3]|\\b(price|priced|cost|usd|eur|improved|upgraded)\\b/i.test(raw);const summary=safe?raw:ctx.product.title;return [{json:{...ctx,reply:(ctx.product.is_demo?'[DEMO - simulated product and prices]\\n':'')+'Saved watch #'+ctx.watch.id+': '+ctx.product.title+'\\nTarget: '+(ctx.target_cents/100).toFixed(2)+' EUR; significant drop: '+(ctx.discount_bps/100)+'%.\\nCurrent item price: '+(ctx.product.price_cents/100).toFixed(2)+' EUR.\\nDaily checks: 09:00 Europe/Paris.\\n'+summary+'\\n'+ctx.url}}];"
+        "jsCode": "const ctx=$('Read registration result').first().json;const raw=typeof $json.text==='string'?$json.text.trim().slice(0,350):'';const allowed=new Set((ctx.product.title+' new condition a an the is in product').toLowerCase().match(/[a-z0-9]+/g)||[]);const words=raw.toLowerCase().match(/[a-z0-9]+/g)||[];const safe=words.length>0&&words.every(w=>allowed.has(w))&&!/[\u20ac$\u00a3]|\\b(price|priced|cost|usd|eur|improved|upgraded)\\b/i.test(raw);const summary=safe?raw:ctx.product.title;return [{json:{...ctx,reply:(ctx.product.is_demo?'[DEMO - simulated product and prices]\\n':'')+'Saved watch #'+ctx.watch.id+': '+ctx.product.title+'\\nTarget: '+(ctx.target_cents/100).toFixed(2)+' EUR; significant drop: '+(ctx.discount_bps/100)+'%.\\nCurrent item price: '+(ctx.product.price_cents/100).toFixed(2)+' EUR.\\nDaily checks: 09:00 Europe/Paris.\\n'+summary+'\\n'+ctx.url}}];"
       }
     },
     {
       "id": "70390284-6066-4f0b-9043-dcb03ef1ba9e",
-      "name": "Check all watches",
+      "name": "Check all saved products",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
@@ -411,7 +411,7 @@
     },
     {
       "id": "edbcb282-a866-4bff-9b25-ff097bf4bd1a",
-      "name": "List watches",
+      "name": "Load saved products",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
@@ -434,7 +434,7 @@
     },
     {
       "id": "ff24aafd-4a25-47ce-9ad2-75242ea093b7",
-      "name": "Listed",
+      "name": "Read saved products",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -447,7 +447,7 @@
     },
     {
       "id": "76f1df75-0988-4ece-af43-9e2ece54f8e1",
-      "name": "List reply",
+      "name": "Format product list",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -460,7 +460,7 @@
     },
     {
       "id": "cfa0b79d-a523-4dbb-9ff9-13837a9ac404",
-      "name": "Remove watch",
+      "name": "Stop tracking this product",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
@@ -483,7 +483,7 @@
     },
     {
       "id": "12186cc8-5d61-433b-b6f8-5d8745f5702b",
-      "name": "Removed",
+      "name": "Read removal result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -496,7 +496,7 @@
     },
     {
       "id": "62530e49-6e9c-4601-9ba6-45f1a1d6af18",
-      "name": "Prepare reply",
+      "name": "Add reply tracking key",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -509,7 +509,7 @@
     },
     {
       "id": "36025684-7ca1-498f-bdcc-cf96779e3196",
-      "name": "Reply to user",
+      "name": "Send reply to Telegram",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
@@ -530,7 +530,7 @@
     },
     {
       "id": "01649f59-9830-4895-ab38-eb9c34802b82",
-      "name": "Finish update",
+      "name": "Save command delivery status",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
@@ -553,7 +553,7 @@
     },
     {
       "id": "d725d51b-01fd-4f68-8ac7-a491c37e7189",
-      "name": "Command result",
+      "name": "Return command result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -566,7 +566,7 @@
     },
     {
       "id": "c6442584-785a-45b7-8fa8-c38080831b1b",
-      "name": "Read me 29",
+      "name": "Workflow notes",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
@@ -581,342 +581,342 @@
     }
   ],
   "connections": {
-    "Input": {
+    "Receive input": {
       "main": [
         [
           {
-            "node": "Settings",
+            "node": "Add app settings",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Settings": {
+    "Add app settings": {
       "main": [
         [
           {
-            "node": "Parse command",
+            "node": "Read command and arguments",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Parse command": {
+    "Read command and arguments": {
       "main": [
         [
           {
-            "node": "Allowed user?",
+            "node": "Is this the authorised user?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Allowed user?": {
+    "Is this the authorised user?": {
       "main": [
         [
           {
-            "node": "Claim update",
+            "node": "Record incoming message ID",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Ignore unauthorized",
+            "node": "Skip unauthorised message",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Claim update": {
+    "Record incoming message ID": {
       "main": [
         [
           {
-            "node": "Claimed",
+            "node": "Read message check result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Claimed": {
+    "Read message check result": {
       "main": [
         [
           {
-            "node": "New update?",
+            "node": "Is this a new message?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "New update?": {
+    "Is this a new message?": {
       "main": [
         [
           {
-            "node": "Route command",
+            "node": "Choose command action",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Duplicate ignored",
+            "node": "Skip repeated message",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Route command": {
+    "Choose command action": {
       "main": [
         [
           {
-            "node": "Fetch registration price",
+            "node": "Get starting product price",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Check all watches",
+            "node": "Check all saved products",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "List watches",
+            "node": "Load saved products",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Remove watch",
+            "node": "Stop tracking this product",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prepare reply",
+            "node": "Add reply tracking key",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch registration price": {
+    "Get starting product price": {
       "main": [
         [
           {
-            "node": "Can register?",
+            "node": "Is starting price valid?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Can register?": {
+    "Is starting price valid?": {
       "main": [
         [
           {
-            "node": "Register product",
+            "node": "Save product and targets",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Registration price error",
+            "node": "Explain price lookup failure",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Register product": {
+    "Save product and targets": {
       "main": [
         [
           {
-            "node": "Registered",
+            "node": "Read registration result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Registered": {
+    "Read registration result": {
       "main": [
         [
           {
-            "node": "New registration?",
+            "node": "Was a new product saved?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "New registration?": {
+    "Was a new product saved?": {
       "main": [
         [
           {
-            "node": "Summarise product",
+            "node": "Create short product label",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prepare reply",
+            "node": "Add reply tracking key",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Summary model": {
+    "Local product label model": {
       "ai_languageModel": [
         [
           {
-            "node": "Summarise product",
+            "node": "Create short product label",
             "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "Summarise product": {
+    "Create short product label": {
       "main": [
         [
           {
-            "node": "Registration confirmation",
+            "node": "Check label and confirm save",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "List watches": {
+    "Load saved products": {
       "main": [
         [
           {
-            "node": "Listed",
+            "node": "Read saved products",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Listed": {
+    "Read saved products": {
       "main": [
         [
           {
-            "node": "List reply",
+            "node": "Format product list",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Remove watch": {
+    "Stop tracking this product": {
       "main": [
         [
           {
-            "node": "Removed",
+            "node": "Read removal result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Registration price error": {
+    "Explain price lookup failure": {
       "main": [
         [
           {
-            "node": "Prepare reply",
+            "node": "Add reply tracking key",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Registration confirmation": {
+    "Check label and confirm save": {
       "main": [
         [
           {
-            "node": "Prepare reply",
+            "node": "Add reply tracking key",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check all watches": {
+    "Check all saved products": {
       "main": [
         [
           {
-            "node": "Prepare reply",
+            "node": "Add reply tracking key",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "List reply": {
+    "Format product list": {
       "main": [
         [
           {
-            "node": "Prepare reply",
+            "node": "Add reply tracking key",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Removed": {
+    "Read removal result": {
       "main": [
         [
           {
-            "node": "Prepare reply",
+            "node": "Add reply tracking key",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare reply": {
+    "Add reply tracking key": {
       "main": [
         [
           {
-            "node": "Reply to user",
+            "node": "Send reply to Telegram",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Reply to user": {
+    "Send reply to Telegram": {
       "main": [
         [
           {
-            "node": "Finish update",
+            "node": "Save command delivery status",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Finish update": {
+    "Save command delivery status": {
       "main": [
         [
           {
-            "node": "Command result",
+            "node": "Return command result",
             "type": "main",
             "index": 0
           }

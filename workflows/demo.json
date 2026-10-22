@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "a31a1910-f077-4994-a1e2-3ad1ec334bea",
-      "name": "Run demo",
+      "name": "Start demo test",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
@@ -16,7 +16,7 @@
     },
     {
       "id": "6a2244f4-096e-4f2a-a248-57e7feb1a4c1",
-      "name": "Demo update",
+      "name": "Create test message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -29,7 +29,7 @@
     },
     {
       "id": "a375d7c4-8bb0-4747-81b4-05e9c2f8af9a",
-      "name": "Handle demo message",
+      "name": "Process test command",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
@@ -50,22 +50,22 @@
     }
   ],
   "connections": {
-    "Run demo": {
+    "Start demo test": {
       "main": [
         [
           {
-            "node": "Demo update",
+            "node": "Create test message",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Demo update": {
+    "Create test message": {
       "main": [
         [
           {
-            "node": "Handle demo message",
+            "node": "Process test command",
             "type": "main",
             "index": 0
           }

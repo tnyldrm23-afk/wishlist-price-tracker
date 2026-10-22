@@ -36,4 +36,4 @@ A controlled webhook test in the local deployment intentionally failed without r
 
 ## Scope of verification
 
-The offline suite currently contains 43 tests. Existing local deployment checks also covered real price retrieval, registration, listing, checking, removal and the automatic error notification. Re-running live checks requires credentials and may consume provider credits. They are not part of `npm test`.
+The offline suite currently contains 46 tests. Existing local deployment checks also covered real price retrieval, registration, listing, checking, removal and the automatic error notification. Re-running live checks requires credentials and may consume provider credits. They are not part of `npm test`.
