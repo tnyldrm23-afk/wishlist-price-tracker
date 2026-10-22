@@ -1,0 +1,85 @@
+{
+  "id": "wtDemo0000000001",
+  "name": "Wishlist | Demo - Manual Telegram Update",
+  "active": false,
+  "nodes": [
+    {
+      "id": "a31a1910-f077-4994-a1e2-3ad1ec334bea",
+      "name": "Run demo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "6a2244f4-096e-4f2a-a248-57e7feb1a4c1",
+      "name": "Demo update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{update:{update_id:Date.now(),message:{chat:{id:10001,type:\"private\"},text:\"/list\"}}}}];"
+      }
+    },
+    {
+      "id": "a375d7c4-8bb0-4747-81b4-05e9c2f8af9a",
+      "name": "Handle demo message",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wtCommands000001",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Run demo": {
+      "main": [
+        [
+          {
+            "node": "Demo update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo update": {
+      "main": [
+        [
+          {
+            "node": "Handle demo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "errorWorkflow": "wtErrorHandler01"
+  },
+  "versionId": "4695d6d0-744b-4bd5-a5a0-267a18df43fd",
+  "pinData": {}
+}

@@ -1,0 +1,166 @@
+{
+  "id": "wtEntry000000001",
+  "name": "Wishlist | Telegram and Daily Schedule",
+  "active": false,
+  "nodes": [
+    {
+      "id": "3ab2bfa0-4503-4e8d-bb2b-d6c5d60ee67f",
+      "name": "Telegram message",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "chatIds": "10001"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "wtTelegram000001",
+          "name": "Wishlist Telegram"
+        }
+      },
+      "webhookId": "wishlist-telegram-trigger"
+    },
+    {
+      "id": "12cc51b0-1b05-4812-b9be-531f0bfef949",
+      "name": "Handle message",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wtCommands000001",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "7e05b324-63d5-4fe5-b653-cabb2155f0f2",
+      "name": "Every morning at 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        260
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fb193798-37ce-4854-b5c3-0c095183395e",
+      "name": "Schedule settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        260
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{\"cfg\": {\"mode\": \"demo\", \"source\": \"demo\", \"allowed_chat_id\": \"10001\"}}}];"
+      }
+    },
+    {
+      "id": "2a4418bc-b2ef-41f8-8128-da74644f093a",
+      "name": "Check wishlist",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        260
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wtRunChecks00001",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "ec0bf3ed-d129-4bfc-b8a3-674d33872717",
+      "name": "Read me 5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -240
+      ],
+      "parameters": {
+        "content": "## Activate only after connecting your own accounts\nTimezone: Europe/Paris (including DST). A public HTTPS webhook URL and Telegram credentials are required. Demo tests run in the separate manual harness.",
+        "width": 850,
+        "height": 140
+      }
+    }
+  ],
+  "connections": {
+    "Telegram message": {
+      "main": [
+        [
+          {
+            "node": "Handle message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every morning at 09:00": {
+      "main": [
+        [
+          {
+            "node": "Schedule settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule settings": {
+      "main": [
+        [
+          {
+            "node": "Check wishlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "errorWorkflow": "wtErrorHandler01"
+  },
+  "versionId": "579fd2a8-ca31-4be6-bb4e-dedfd8c0ea38",
+  "pinData": {}
+}

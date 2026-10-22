@@ -1,0 +1,87 @@
+name: wishlist-tracker
+services:
+  ollama:
+    image: ollama/ollama@sha256:9413eb2a9419819146397b9393c7a645d44753317c1b0e3a76ab45671adc2d7c
+    environment:
+      OLLAMA_MAX_LOADED_MODELS: '1'
+      OLLAMA_NUM_PARALLEL: '1'
+    volumes:
+      - ollama_data:/root/.ollama
+    mem_limit: 2g
+    restart: unless-stopped
+  webhook-gateway:
+    image: node:22.20.0-alpine
+    working_dir: /app
+    command: [node, app/webhook-gateway.mjs]
+    volumes:
+      - ./app:/app/app:ro
+    restart: unless-stopped
+  tunnel:
+    image: cloudflare/cloudflared@sha256:9b49eed8f62806d5d45ddf59ecefb5710429598ea6d3fcccd2af938f621b2b07
+    command: [tunnel, --no-autoupdate, --url, 'http://webhook-gateway:8080']
+    depends_on: [webhook-gateway]
+    restart: unless-stopped
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: wishlist
+      POSTGRES_USER: wishlist
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run npm run setup first}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U wishlist -d wishlist']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  price-service:
+    image: node:22.20.0-alpine
+    working_dir: /app
+    command: [node, app/server.mjs]
+    environment:
+      PRICE_SOURCE: ${PRICE_SOURCE:-demo}
+      KEEPA_API_KEY: ${KEEPA_API_KEY:-}
+      SCRAPINGDOG_API_KEY: ${SCRAPINGDOG_API_KEY:-}
+      DEMO_API_KEY: ${DEMO_API_KEY:?Run npm run setup first}
+    volumes:
+      - ./app:/app/app:ro
+    ports: ['127.0.0.1:8787:8080']
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://localhost:8080/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.43.4
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_DATABASE: wishlist
+      DB_POSTGRESDB_USER: wishlist
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_POSTGRESDB_SCHEMA: n8n
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?Run npm run setup first}
+      GENERIC_TIMEZONE: Europe/Paris
+      TZ: Europe/Paris
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
+      N8N_DIAGNOSTICS_ENABLED: 'false'
+      N8N_VERSION_NOTIFICATIONS_ENABLED: 'false'
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
+    ports: ['127.0.0.1:5678:5678']
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+      - ./.runtime:/bootstrap:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+      price-service: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  ollama_data:
+  postgres_data:
+  n8n_data:

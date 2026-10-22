@@ -1,0 +1,463 @@
+{
+  "id": "wtCheckWatch0001",
+  "name": "Wishlist | Check Watch Price",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "5d09f267-16d2-457a-b645-50ad0091f55d",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,asin:$json.watch.asin}}];"
+      },
+      "id": "b80ecb94-f614-4cbb-9031-25350ccc7145",
+      "name": "Prepare check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wtFetchPrice0001",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "41398949-a6d7-4216-aade-60735b86d312",
+      "name": "Get valid price",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6d9f1e8a-241b-4878-815e-f28c57e41011",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "408a1060-4a6b-4556-bcf0-825bbe6aabb5",
+      "name": "Valid observation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// These exact functions are embedded in n8n Code nodes by scripts/generate.mjs.\nfunction parseCommand(update, allowedChatId) {\n  const msg=update?.message;\n  if (!msg || String(msg.chat?.id)!==String(allowedChatId) || msg.chat?.type!=='private') return {action:'ignore'};\n  const base={chat_id:String(msg.chat.id), update_id:String(update.update_id ?? ''), text:String(msg.text??'').trim()};\n  if (!/^\\d+$/.test(base.update_id)) return {...base,action:'invalid',reply:'Invalid update identifier.'};\n  const parts=base.text.split(/\\s+/); const cmd=parts.shift()?.toLowerCase();\n  const usage='Commands:\\n/watch <amazon.fr product link> <target EUR> [discount %]\\n/list\\n/remove <watch ID>\\n/check\\nExample: /watch https://www.amazon.fr/dp/B000TEST01 90 15';\n  if (cmd==='/help' || cmd==='/start') return {...base,action:'help',reply:usage};\n  if ((cmd==='/check'||cmd==='/list') && !parts.length) return {...base,action:cmd.slice(1)};\n  if (cmd==='/remove' && parts.length===1 && /^[1-9]\\d*$/.test(parts[0])) return {...base,action:'remove',watch_id:parts[0]};\n  if(cmd!=='/watch' || parts.length<2 || parts.length>3) return {...base,action:'invalid',reply:usage};\n  // Use an anchored allowlist parser: n8n's isolated Code runtime has no URL global.\n  const match=parts[0].match(/^https:\\/\\/(?:www\\.)?amazon\\.fr\\/(?:[^?#\\s]+\\/)?(?:dp|gp\\/product)\\/([A-Z0-9]{10})(?:\\/[^?#\\s]*)?(?:\\?[^#\\s]*)?(?:#[^\\s]*)?$/i);\n  if(!match) return {...base,action:'invalid',reply:'Only full Amazon France product links are supported. Open shortened links in your browser first.'};\n  if(!/^\\d{1,6}(?:[.,]\\d{1,2})?$/.test(parts[1])) return {...base,action:'invalid',reply:'Target price must be a positive EUR amount with at most two decimals.'};\n  const target_cents=Math.round(Number(parts[1].replace(',','.'))*100);\n  const threshold=parts[2]??'15';\n  if(!/^\\d{1,2}(?:\\.\\d{1,2})?$/.test(threshold)||Number(threshold)<=0||Number(threshold)>=100||target_cents<=0)\n    return {...base,action:'invalid',reply:'Use a positive target price and a discount percentage greater than 0 and below 100.'};\n  const asin=match[1].toUpperCase();\n  return {...base,action:'watch',asin,url:`https://www.amazon.fr/dp/${asin}`,target_cents,discount_bps:Math.round(Number(threshold)*100)};\n}\nfunction validatePrice(body, asin, now=Date.now()) {\n  if (!body?.ok) return {valid:false,reason:body?.error??'Price service unavailable',retryable:!!body?.retryable && (Number(body?.retry_after_seconds)||0)<=60,retry_after_seconds:Math.min(60,Math.max(0,Number(body?.retry_after_seconds)||0))};\n  const p=body.product, time=Date.parse(p?.observed_at);\n  if(!p || p.asin!==asin || p.marketplace!=='amazon.fr' || p.currency!=='EUR' || p.condition!=='new' || p.series!=='NEW_ITEM') return {valid:false,reason:'Product or price basis mismatch',retryable:false};\n  if(!p.available || !Number.isSafeInteger(p.price_cents)||p.price_cents<=0) return {valid:false,reason:'No valid available price',retryable:false};\n  if(!Number.isFinite(time)||time>now+60000||now-time>6*3600000) return {valid:false,reason:'Stale or invalid observation time',retryable:false};\n  return {valid:true,product:{...p,title:String(p.title??asin).replace(/[\\x00-\\x1f]/g,' ').slice(0,250)}};\n}\nfunction calculateDecision(watch, product) {\n  const current=product.price_cents, baseline=Math.max(Number(watch.baseline_cents)||0,current);\n  const target=current<=Number(watch.target_cents);\n  const significant=(baseline-current)*10000>=baseline*Number(watch.discount_bps);\n  const qualifies=target||significant;\n  const newLow=watch.last_alert_cents==null || current<Number(watch.last_alert_cents);\n  return {baseline_cents:baseline,price_cents:current,drop_percent:Math.round((baseline-current)*10000/baseline)/100,\n    target_met:target,significant_drop:significant,qualifies,should_alert:qualifies&&(!watch.qualifying||newLow)};\n}\nfunction formatAlert(watch, product, decision) {\n  const money=n=>(Number(n)/100).toFixed(2)+' EUR';\n  return `${product.is_demo?'[DEMO - simulated prices]\\n':''}${decision.target_met?'Target price reached!':'Significant price drop!'}\\n${product.title}\\nCurrent: ${money(product.price_cents)}\\nObserved reference: ${money(decision.baseline_cents)}\\nDecrease: ${decision.drop_percent.toFixed(2)}%\\nYour target: ${money(watch.target_cents)}${decision.target_met?'':` (${money(product.price_cents-watch.target_cents)} above target)`}\\nObserved: ${product.observed_at}\\nNew condition; item price only. Shipping and personal coupons excluded.\\n${watch.url}`;\n}\nfunction normalizeKeepa(payload, asin) {\n  const p=payload?.products?.find(p=>p.asin===asin);\n  if(!p || p.domainId!==4) return {ok:false,error:'Product not found on Amazon France',retryable:false};\n  const series=p.csv?.[1]; // Keepa NEW: new-condition item price, excluding shipping.\n  const price=Array.isArray(series)&&series.length>=2?series.at(-1):null;\n  const time=Number.isFinite(p.lastUpdate)?new Date((p.lastUpdate+21564000)*60000).toISOString():null;\n  return {ok:true,product:{asin,marketplace:'amazon.fr',currency:'EUR',condition:'new',series:'NEW_ITEM',\n    title:p.title??asin,price_cents:price,available:Number.isInteger(price)&&price>0,observed_at:time,is_demo:false}};\n}\n\nreturn [{json:{...$json,decision:calculateDecision($json.watch,$json.product)}}];"
+      },
+      "id": "11327979-62b9-4e99-bb17-ed1fbc3f9107",
+      "name": "Calculate alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tracker.observe($1::jsonb) AS data;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "6cfa085c-c461-456f-82c1-551096beab06",
+      "name": "Reserve alert atomically",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1104,
+        -96
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "wtPostgres000001",
+          "name": "Wishlist PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(i=>({json:i.json.data}));"
+      },
+      "id": "1643d5ef-ccac-48df-be7f-0544c09b200e",
+      "name": "Reserved",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4c7e2846-7ea7-49c6-b479-24995106c1b9",
+              "leftValue": "={{ $json.should_send }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ba41e091-7190-4c8a-9638-4db2e46f46ae",
+      "name": "Send alert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// These exact functions are embedded in n8n Code nodes by scripts/generate.mjs.\nfunction parseCommand(update, allowedChatId) {\n  const msg=update?.message;\n  if (!msg || String(msg.chat?.id)!==String(allowedChatId) || msg.chat?.type!=='private') return {action:'ignore'};\n  const base={chat_id:String(msg.chat.id), update_id:String(update.update_id ?? ''), text:String(msg.text??'').trim()};\n  if (!/^\\d+$/.test(base.update_id)) return {...base,action:'invalid',reply:'Invalid update identifier.'};\n  const parts=base.text.split(/\\s+/); const cmd=parts.shift()?.toLowerCase();\n  const usage='Commands:\\n/watch <amazon.fr product link> <target EUR> [discount %]\\n/list\\n/remove <watch ID>\\n/check\\nExample: /watch https://www.amazon.fr/dp/B000TEST01 90 15';\n  if (cmd==='/help' || cmd==='/start') return {...base,action:'help',reply:usage};\n  if ((cmd==='/check'||cmd==='/list') && !parts.length) return {...base,action:cmd.slice(1)};\n  if (cmd==='/remove' && parts.length===1 && /^[1-9]\\d*$/.test(parts[0])) return {...base,action:'remove',watch_id:parts[0]};\n  if(cmd!=='/watch' || parts.length<2 || parts.length>3) return {...base,action:'invalid',reply:usage};\n  // Use an anchored allowlist parser: n8n's isolated Code runtime has no URL global.\n  const match=parts[0].match(/^https:\\/\\/(?:www\\.)?amazon\\.fr\\/(?:[^?#\\s]+\\/)?(?:dp|gp\\/product)\\/([A-Z0-9]{10})(?:\\/[^?#\\s]*)?(?:\\?[^#\\s]*)?(?:#[^\\s]*)?$/i);\n  if(!match) return {...base,action:'invalid',reply:'Only full Amazon France product links are supported. Open shortened links in your browser first.'};\n  if(!/^\\d{1,6}(?:[.,]\\d{1,2})?$/.test(parts[1])) return {...base,action:'invalid',reply:'Target price must be a positive EUR amount with at most two decimals.'};\n  const target_cents=Math.round(Number(parts[1].replace(',','.'))*100);\n  const threshold=parts[2]??'15';\n  if(!/^\\d{1,2}(?:\\.\\d{1,2})?$/.test(threshold)||Number(threshold)<=0||Number(threshold)>=100||target_cents<=0)\n    return {...base,action:'invalid',reply:'Use a positive target price and a discount percentage greater than 0 and below 100.'};\n  const asin=match[1].toUpperCase();\n  return {...base,action:'watch',asin,url:`https://www.amazon.fr/dp/${asin}`,target_cents,discount_bps:Math.round(Number(threshold)*100)};\n}\nfunction validatePrice(body, asin, now=Date.now()) {\n  if (!body?.ok) return {valid:false,reason:body?.error??'Price service unavailable',retryable:!!body?.retryable && (Number(body?.retry_after_seconds)||0)<=60,retry_after_seconds:Math.min(60,Math.max(0,Number(body?.retry_after_seconds)||0))};\n  const p=body.product, time=Date.parse(p?.observed_at);\n  if(!p || p.asin!==asin || p.marketplace!=='amazon.fr' || p.currency!=='EUR' || p.condition!=='new' || p.series!=='NEW_ITEM') return {valid:false,reason:'Product or price basis mismatch',retryable:false};\n  if(!p.available || !Number.isSafeInteger(p.price_cents)||p.price_cents<=0) return {valid:false,reason:'No valid available price',retryable:false};\n  if(!Number.isFinite(time)||time>now+60000||now-time>6*3600000) return {valid:false,reason:'Stale or invalid observation time',retryable:false};\n  return {valid:true,product:{...p,title:String(p.title??asin).replace(/[\\x00-\\x1f]/g,' ').slice(0,250)}};\n}\nfunction calculateDecision(watch, product) {\n  const current=product.price_cents, baseline=Math.max(Number(watch.baseline_cents)||0,current);\n  const target=current<=Number(watch.target_cents);\n  const significant=(baseline-current)*10000>=baseline*Number(watch.discount_bps);\n  const qualifies=target||significant;\n  const newLow=watch.last_alert_cents==null || current<Number(watch.last_alert_cents);\n  return {baseline_cents:baseline,price_cents:current,drop_percent:Math.round((baseline-current)*10000/baseline)/100,\n    target_met:target,significant_drop:significant,qualifies,should_alert:qualifies&&(!watch.qualifying||newLow)};\n}\nfunction formatAlert(watch, product, decision) {\n  const money=n=>(Number(n)/100).toFixed(2)+' EUR';\n  return `${product.is_demo?'[DEMO - simulated prices]\\n':''}${decision.target_met?'Target price reached!':'Significant price drop!'}\\n${product.title}\\nCurrent: ${money(product.price_cents)}\\nObserved reference: ${money(decision.baseline_cents)}\\nDecrease: ${decision.drop_percent.toFixed(2)}%\\nYour target: ${money(watch.target_cents)}${decision.target_met?'':` (${money(product.price_cents-watch.target_cents)} above target)`}\\nObserved: ${product.observed_at}\\nNew condition; item price only. Shipping and personal coupons excluded.\\n${watch.url}`;\n}\nfunction normalizeKeepa(payload, asin) {\n  const p=payload?.products?.find(p=>p.asin===asin);\n  if(!p || p.domainId!==4) return {ok:false,error:'Product not found on Amazon France',retryable:false};\n  const series=p.csv?.[1]; // Keepa NEW: new-condition item price, excluding shipping.\n  const price=Array.isArray(series)&&series.length>=2?series.at(-1):null;\n  const time=Number.isFinite(p.lastUpdate)?new Date((p.lastUpdate+21564000)*60000).toISOString():null;\n  return {ok:true,product:{asin,marketplace:'amazon.fr',currency:'EUR',condition:'new',series:'NEW_ITEM',\n    title:p.title??asin,price_cents:price,available:Number.isInteger(price)&&price>0,observed_at:time,is_demo:false}};\n}\n\nreturn [{json:{...$json,chat_id:$json.watch.chat_id,reply:formatAlert($json.watch,$json.product,$json.decision),delivery_key:\"alert:\"+$json.alert_id}}];"
+      },
+      "id": "514e05c5-4c64-43b1-bb3f-19b9f2291265",
+      "name": "Build alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wtSendMessage001",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "71f8f810-6289-4d10-ba6c-7eab2c00e8eb",
+      "name": "Deliver alert",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tracker.finish_alert($1::jsonb) AS data;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "35b2f748-0ecd-463c-ae94-42c5295b2942",
+      "name": "Save delivery",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2208,
+        -224
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "wtPostgres000001",
+          "name": "Wishlist PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(i=>({json:i.json.data}));"
+      },
+      "id": "d37f3166-1ae7-4292-bffc-9b9af4d50271",
+      "name": "Check result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{...$json,status:\"no-new-alert\"}}];"
+      },
+      "id": "d10e9abb-f83e-49b8-8e07-d1d3554595f2",
+      "name": "No new alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH logged AS (INSERT INTO tracker.errors(watch_id,stage,message) VALUES(($1::jsonb->'watch'->>'id')::bigint,'price-check',$1::jsonb->>'reason')) SELECT $1::jsonb||jsonb_build_object('status','price-unavailable') AS data;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "id": "fcb544ca-33dc-435f-98ce-4b87f8cafff4",
+      "name": "Log price failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        880,
+        240
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "wtPostgres000001",
+          "name": "Wishlist PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(i=>({json:i.json.data}));"
+      },
+      "id": "0a729087-a1a4-4d75-883d-643d2ec592ab",
+      "name": "Price unavailable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Reused by /check and the daily schedule\nCode computes thresholds. PostgreSQL rechecks under a row lock and reserves an alert, so concurrent runs cannot send the same alert twice.",
+        "height": 140,
+        "width": 800
+      },
+      "id": "1e94ef10-1a60-47a7-a2a0-aea14e3f4a14",
+      "name": "Read me 15",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -512
+      ]
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Prepare check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare check": {
+      "main": [
+        [
+          {
+            "node": "Get valid price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get valid price": {
+      "main": [
+        [
+          {
+            "node": "Valid observation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid observation?": {
+      "main": [
+        [
+          {
+            "node": "Calculate alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log price failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate alert": {
+      "main": [
+        [
+          {
+            "node": "Reserve alert atomically",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserve alert atomically": {
+      "main": [
+        [
+          {
+            "node": "Reserved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reserved": {
+      "main": [
+        [
+          {
+            "node": "Send alert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send alert?": {
+      "main": [
+        [
+          {
+            "node": "Build alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No new alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build alert": {
+      "main": [
+        [
+          {
+            "node": "Deliver alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deliver alert": {
+      "main": [
+        [
+          {
+            "node": "Save delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save delivery": {
+      "main": [
+        [
+          {
+            "node": "Check result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log price failure": {
+      "main": [
+        [
+          {
+            "node": "Price unavailable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "binaryMode": "separate",
+    "errorWorkflow": "wtErrorHandler01"
+  },
+  "versionId": "4dfbc864-6add-4cf1-91c6-86342fdf4958",
+  "pinData": {}
+}

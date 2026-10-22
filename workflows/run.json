@@ -1,0 +1,234 @@
+{
+  "id": "wtRunChecks00001",
+  "name": "Wishlist | Check Wishlist",
+  "active": false,
+  "nodes": [
+    {
+      "id": "f6817455-0b5c-4422-a0a5-2bd4c14137c7",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "13d8a25e-502d-487c-8bb5-08e0a079bcd1",
+      "name": "Read active watches",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT $1::jsonb || jsonb_build_object('watches',COALESCE(jsonb_agg(to_jsonb(w) ORDER BY w.id),'[]'::jsonb)) AS data FROM tracker.watches w WHERE w.active AND w.chat_id=$1::jsonb->'cfg'->>'allowed_chat_id' AND w.source=$1::jsonb->'cfg'->>'source';",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "wtPostgres000001",
+          "name": "Wishlist PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "3505b063-3dea-48d3-b9c8-704759615eeb",
+      "name": "Wishlist",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return $input.all().map(i=>({json:i.json.data}));"
+      }
+    },
+    {
+      "id": "f991af4a-fe9b-492e-abba-b148db0f37d8",
+      "name": "Any watches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d2b32b25-456e-49fe-839c-b1f9df4afcd0",
+              "leftValue": "={{ $json.watches.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f78408a8-9620-4004-a158-91609aacd1a0",
+      "name": "Each watch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -100
+      ],
+      "parameters": {
+        "jsCode": "return $json.watches.map(watch=>({json:{cfg:$json.cfg,watch}}));"
+      }
+    },
+    {
+      "id": "9788de1e-487b-4ba0-9dc2-de1f91fc3be9",
+      "name": "Check Watch Price",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        -100
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wtCheckWatch0001",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "e6233482-973d-4020-8275-6e199518e8f4",
+      "name": "Check summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -100
+      ],
+      "parameters": {
+        "jsCode": "const results=$input.all().map(x=>x.json);return [{json:{...$('Input').first().json,reply:'Checked '+results.length+' product(s). '+results.filter(x=>x.status==='price-unavailable').length+' unavailable. New qualifying alerts are sent separately.',results}}];"
+      }
+    },
+    {
+      "id": "5750634f-f68e-4d79-97b6-5f36f6a3c2c0",
+      "name": "Empty wishlist",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        160
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{...$('Input').first().json,reply:'Your wishlist is empty. Add a product with /watch <link> <target EUR> [discount %].',results:[]}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Read active watches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read active watches": {
+      "main": [
+        [
+          {
+            "node": "Wishlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wishlist": {
+      "main": [
+        [
+          {
+            "node": "Any watches?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any watches?": {
+      "main": [
+        [
+          {
+            "node": "Each watch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Empty wishlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Each watch": {
+      "main": [
+        [
+          {
+            "node": "Check Watch Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Watch Price": {
+      "main": [
+        [
+          {
+            "node": "Check summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "errorWorkflow": "wtErrorHandler01"
+  },
+  "versionId": "fdb3a542-beb1-4ab6-a17c-8e173c66e0d3",
+  "pinData": {}
+}

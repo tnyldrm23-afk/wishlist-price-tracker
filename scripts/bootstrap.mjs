@@ -1,0 +1,11 @@
+import {execFileSync} from 'node:child_process';
+const run=(bin,args)=>execFileSync(bin,args,{stdio:'inherit'});
+run(process.execPath,['scripts/setup.mjs']);
+run(process.execPath,['scripts/generate.mjs']);
+run('docker',['compose','up','-d','--wait']);
+run('docker',['compose','exec','-T','postgres','psql','-U','wishlist','-d','wishlist','-v','ON_ERROR_STOP=1','-f','/docker-entrypoint-initdb.d/002-scrapingdog.sql']);
+run('docker',['compose','exec','-T','n8n','n8n','import:credentials','--input=/bootstrap/credentials.json']);
+run('docker',['compose','exec','-T','n8n','n8n','import:workflow','--input=/bootstrap/workflows.json']);
+for(const id of ['wtErrorHandler01','wtFetchPrice0001','wtSendMessage001','wtCheckWatch0001','wtRunChecks00001','wtCommands000001'])run('docker',['compose','exec','-T','n8n','n8n','publish:workflow',`--id=${id}`]);
+run('docker',['compose','restart','n8n']);
+console.log('Ready at http://localhost:5678. Sub-workflows are enabled. The Telegram/schedule entry workflow remains inactive.');

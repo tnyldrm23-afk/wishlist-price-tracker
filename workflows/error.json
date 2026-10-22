@@ -1,0 +1,104 @@
+{
+  "id": "wtErrorHandler01",
+  "name": "Wishlist | Error Handler",
+  "active": false,
+  "versionId": "0ca69e56-5e8a-4326-948d-04510abd08d3",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all"
+  },
+  "nodes": [
+    {
+      "id": "5e1f1936-7e68-49c3-ae9a-93b8adec9fac",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "352cb760-a458-4cfa-9774-b92fbceb3b17",
+      "name": "Prepare failure notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "function formatFailure(input){\n const e=input.execution||{},w=input.workflow||{},t=input.trigger||{};\n const clean=v=>String(v??'Unknown').replace(/[\\r\\n\\x00-\\x1f]/g,' ').slice(0,140);\n const raw=String(e.error?.message||t.error?.message||'');\n const reason=raw.includes('WISHLIST_CONTROLLED_ERROR_TEST')?'Controlled error test (intentional; no Amazon request).':/timeout|timed out/i.test(raw)?'A service request timed out.':/connect|ECONN|ENOTFOUND/i.test(raw)?'A service connection failed.':'Execution failed. Inspect the saved execution for details.';\n const url=w.id&&e.id?`http://localhost:5678/workflow/${encodeURIComponent(w.id)}/executions/${encodeURIComponent(e.id)}`:null;\n return {reply:['Wishlist workflow failure',`Workflow: ${clean(w.name)}`,`Node: ${clean(e.lastNodeExecuted||t.error?.node?.name)}`,`Reason: ${reason}`,url?`Execution: ${url}`:'Execution URL unavailable (trigger failed before a saved execution).','Local execution links open on the computer hosting n8n.'].join('\\n')};\n}\nreturn $input.all().map(item=>({json:formatFailure(item.json)}));"
+      },
+      "position": [
+        260,
+        0
+      ]
+    },
+    {
+      "id": "9a2553c1-632e-4113-8c7c-b49b9af85e01",
+      "name": "Notify owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "10001",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "position": [
+        540,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "wtTelegram000001",
+          "name": "Wishlist Telegram"
+        }
+      }
+    },
+    {
+      "id": "9a176b5c-1c5d-43a1-95d5-4c8c632907b6",
+      "name": "About error handling",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "parameters": {
+        "content": "## Automatic execution failure notifications\nError Trigger \u2192 safe message \u2192 private Telegram.\nWorkflow name, failed node and local execution URL. Raw error text/stacks are not sent, to avoid leaking secrets.\nHandled/continued errors do not trigger this workflow. Manual editor tests do not prove automatic error handling.\nNo self error-workflow link; Telegram delivery is not blindly retried.",
+        "width": 760,
+        "height": 230
+      },
+      "position": [
+        0,
+        -290
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare failure notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare failure notification": {
+      "main": [
+        [
+          {
+            "node": "Notify owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

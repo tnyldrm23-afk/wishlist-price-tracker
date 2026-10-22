@@ -1,0 +1,200 @@
+{
+  "id": "wtSendMessage001",
+  "name": "Wishlist | Send Message",
+  "active": false,
+  "nodes": [
+    {
+      "id": "8cfa0ef4-d12b-49cd-8582-5145f625caeb",
+      "name": "Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "04ac1665-cc28-41eb-907f-e23838f52582",
+      "name": "Demo mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5b57c906-338b-44d4-9d3c-1c4f6cd0f0aa",
+              "leftValue": "={{ $json.cfg.mode === \"demo\" }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "9e890257-d276-4846-919a-424a5a3ce27c",
+      "name": "Capture demo message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        -120
+      ],
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "url": "http://price-service:8080/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({chat_id:$json.chat_id,text:$json.reply,delivery_key:$json.delivery_key}) }}",
+        "options": {
+          "timeout": 70000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wtDemoApi0000001",
+          "name": "Wishlist internal API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "28036f7f-8cb2-4c39-a03c-111fc59e6e9f",
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        140
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "wtTelegram000001",
+          "name": "Wishlist Telegram"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ed0abdbf-8208-4a70-b8e7-31a85faa2351",
+      "name": "Delivery result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const ctx=$('Input').first().json;const message=$json.result??$json;return [{json:{...ctx,delivered:!$json.error&&($json.ok===true||message.message_id!=null),message_id:message.message_id==null?null:String(message.message_id)}}];"
+      }
+    },
+    {
+      "id": "18dccd2a-32c5-44a4-b70a-ca982328b31b",
+      "name": "Read me 5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        200,
+        -350
+      ],
+      "parameters": {
+        "content": "## Delivery safety\nDemo mode writes only to the local inbox. Telegram delivery is not retried blindly: an ambiguous result is flagged for review.",
+        "width": 650,
+        "height": 140
+      }
+    }
+  ],
+  "connections": {
+    "Input": {
+      "main": [
+        [
+          {
+            "node": "Demo mode?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo mode?": {
+      "main": [
+        [
+          {
+            "node": "Capture demo message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture demo message": {
+      "main": [
+        [
+          {
+            "node": "Delivery result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram": {
+      "main": [
+        [
+          {
+            "node": "Delivery result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Paris",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "errorWorkflow": "wtErrorHandler01"
+  },
+  "versionId": "27c683cb-3b00-49d4-85ce-6d9f7278bace",
+  "pinData": {}
+}

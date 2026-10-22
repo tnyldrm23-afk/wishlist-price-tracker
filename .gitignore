@@ -1,0 +1,25 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.runtime/
+**/credentials.json
+**/*credential*.json
+*.pem
+*.key
+*.p12
+*.pfx
+# Dependencies and generated data
+node_modules/
+coverage/
+*.log
+.DS_Store
+tmp/
+output/
+.presentation-build/
+presentation/
+# Local Docker data (named volumes normally live outside this repository)
+volumes/
+postgres_data/
+n8n_data/
+ollama_data/
